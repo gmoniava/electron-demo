@@ -2,12 +2,12 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 
 export const Route = createFileRoute("/tasks")({
-  loader: () => window.desktop.tasks.getOverview(),
+  loader: () => window.desktop.tasks.getTasks(),
   component: TasksPage,
 });
 
 function TasksPage() {
-  const { tasks, device } = Route.useLoaderData();
+  const tasks = Route.useLoaderData();
 
   return (
     <section className="max-w-xl space-y-4">
@@ -26,9 +26,6 @@ function TasksPage() {
           ))}
         </ul>
       )}
-      <p className="text-xs text-gray-500">
-        Device: {device.hostname} ({device.platform})
-      </p>
     </section>
   );
 }

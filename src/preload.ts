@@ -11,12 +11,12 @@ import type { DesktopApi } from "./shared/api";
 const api: DesktopApi = {
   tasks: {
     // Ask main process for task overview
-    getOverview: () => ipcRenderer.invoke(IPC_CHANNELS.tasks.getOverview),
+    getTasks: () => ipcRenderer.invoke(IPC_CHANNELS.tasks.getTasks),
   },
 
   contacts: {
     // Ask main process for contacts
-    list: () => ipcRenderer.invoke(IPC_CHANNELS.contacts.list),
+    getContacts: () => ipcRenderer.invoke(IPC_CHANNELS.contacts.getContacts),
   },
 };
 

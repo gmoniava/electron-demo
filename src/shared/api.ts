@@ -5,12 +5,6 @@ export interface Task {
   status: "In progress" | "To do" | "Done";
 }
 
-export interface TasksOverview {
-  tasks: Task[];
-  device: { hostname: string; platform: string; architecture: string };
-  loadedAt: string;
-}
-
 export interface Contact {
   id: string;
   name: string;
@@ -19,11 +13,11 @@ export interface Contact {
 }
 
 export interface DesktopApi {
-  tasks: { getOverview: () => Promise<TasksOverview> };
-  contacts: { list: () => Promise<Contact[]> };
+  tasks: { getTasks: () => Promise<Task[]> };
+  contacts: { getContacts: () => Promise<Contact[]> };
 }
 
 export const IPC_CHANNELS = {
-  tasks: { getOverview: "tasks:get-overview" },
-  contacts: { list: "contacts:list" },
+  tasks: { getTasks: "tasks:getTasks" },
+  contacts: { getContacts: "contacts:getContacts" },
 } as const;
