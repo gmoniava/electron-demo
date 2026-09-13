@@ -1,8 +1,12 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { Migration } from "./types";
 
+// Each migration is one database change, such as creating a table or adding a column.
+// SQLite's `user_version` stores the last migration that was completed.
+// We skip older migrations and only run the ones this database is missing.
 export function runMigrations(database: DatabaseSync, migrations: readonly Migration[]): void {
-  // Keep migration numbering predictable so slice(version) stays correct.
+  // Migrations must be numbered 1, 2, 3, ... with no gaps,
+  // so the database version always matches the migration's position in this list.
   migrations.forEach((migration, index) => {
     if (migration.version !== index + 1) {
       throw new Error("Migrations must have consecutive versions starting at 1");
