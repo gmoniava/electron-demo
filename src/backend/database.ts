@@ -1,20 +1,36 @@
-import { mkdirSync } from 'node:fs'
-import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
+import { mkdirSync } from "node:fs";
+import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 
-let database: DatabaseSync | undefined
+let database: DatabaseSync | undefined;
 
 export function initializeDatabase(filePath: string): void {
-  if (database) return
+  // Already initialized in this process
+  if (database) return;
 
-  mkdirSync(path.dirname(filePath), { recursive: true })
-  const connection = new DatabaseSync(filePath)
+  // Make sure the DB folder exists
+  mkdirSync(path.dirname(filePath), { recursive: true });
+
+  // Open/create the SQLite database
+  const connection = new DatabaseSync(filePath);
+
   try {
-    connection.exec('PRAGMA busy_timeout = 5000')
-    connection.exec('BEGIN IMMEDIATE')
+    // Wait briefly if the DB is locked
+    connection.exec("PRAGMA busy_timeout = 5000");
+
+    // Start a write transaction
+    connection.exec("BEGIN IMMEDIATE");
+
     try {
-      const version = connection.prepare('PRAGMA user_version').get()?.user_version
+      // Read schema version
+      const version = connection.prepare("PRAGMA user_version").get()?.user_version;
+
+      if (version !== 0 && version !== 1 && version !== 2) {
+        throw new Error(`Unsupported database version: ${version}`);
+      }
+
       if (version === 0) {
+        // First-time database setup
         connection.exec(`
           CREATE TABLE contacts (
             id TEXT PRIMARY KEY NOT NULL,
@@ -22,37 +38,64 @@ export function initializeDatabase(filePath: string): void {
             role TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE
           ) STRICT;
-        `)
+        `);
 
-        const insert = connection.prepare(
-          'INSERT INTO contacts (id, name, role, email) VALUES (?, ?, ?, ?)',
-        )
-        insert.run('contact-1', 'Alex Morgan', 'Product designer', 'alex@example.com')
-        insert.run('contact-2', 'Jamie Chen', 'Software engineer', 'jamie@example.com')
-        insert.run('contact-3', 'Sam Rivera', 'Project manager', 'sam@example.com')
-        // Seed only during the initial migration, preserving later edits/deletions.
-        connection.exec('PRAGMA user_version = 1')
-      } else if (version !== 1) {
-        throw new Error(`Unsupported database version: ${version}`)
+        // Prepare reusable insert statement
+        const insert = connection.prepare("INSERT INTO contacts (id, name, role, email) VALUES (?, ?, ?, ?)");
+
+        // Seed initial data
+        insert.run("contact-1", "Alex Morgan", "Product designer", "alex@example.com");
+        insert.run("contact-2", "Jamie Chen", "Software engineer", "jamie@example.com");
+        insert.run("contact-3", "Sam Rivera", "Project manager", "sam@example.com");
+
+        // Mark migration as complete
+        connection.exec("PRAGMA user_version = 1");
       }
-      connection.exec('COMMIT')
+
+      // Add tasks to both new databases and existing contacts-only databases.
+      if (version === 0 || version === 1) {
+        connection.exec(`
+          CREATE TABLE tasks (
+            id TEXT PRIMARY KEY NOT NULL,
+            title TEXT NOT NULL,
+            project TEXT NOT NULL,
+            status TEXT NOT NULL CHECK (status IN ('In progress', 'To do', 'Done'))
+          ) STRICT;
+        `);
+
+        const insert = connection.prepare("INSERT INTO tasks (id, title, project, status) VALUES (?, ?, ?, ?)");
+        insert.run("task-1", "Plan the next release", "Product", "In progress");
+        insert.run("task-2", "Review the contact directory", "Operations", "To do");
+        insert.run("task-3", "Set up your workspace", "Getting started", "Done");
+        // Seed only once so subsequent edits and deletions persist.
+        connection.exec("PRAGMA user_version = 2");
+      }
+
+      // Save transaction
+      connection.exec("COMMIT");
     } catch (error) {
-      connection.exec('ROLLBACK')
-      throw error
+      // Undo failed migration
+      connection.exec("ROLLBACK");
+      throw error;
     }
-    database = connection
+
+    // Store the active connection
+    database = connection;
   } catch (error) {
-    connection.close()
-    throw error
+    connection.close();
+    throw error;
   }
 }
 
 export function getDatabase(): DatabaseSync {
-  if (!database) throw new Error('Database has not been initialized')
-  return database
+  // DB must be initialized first
+  if (!database) throw new Error("Database has not been initialized");
+
+  return database;
 }
 
 export function closeDatabase(): void {
-  database?.close()
-  database = undefined
+  // Close and reset connection
+  database?.close();
+  database = undefined;
 }
