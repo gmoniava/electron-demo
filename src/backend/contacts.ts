@@ -1,9 +1,9 @@
 import type { Contact } from '../shared/api'
+import { getDatabase } from './database'
 
 export function listContacts(): Contact[] {
-  return [
-    { id: 'contact-1', name: 'Alex Morgan', role: 'Product designer', email: 'alex@example.com' },
-    { id: 'contact-2', name: 'Jamie Chen', role: 'Software engineer', email: 'jamie@example.com' },
-    { id: 'contact-3', name: 'Sam Rivera', role: 'Project manager', email: 'sam@example.com' },
-  ]
+  // The schema guarantees these fields are non-null text values.
+  return getDatabase()
+    .prepare('SELECT id, name, role, email FROM contacts ORDER BY name COLLATE NOCASE, id')
+    .all() as unknown as Contact[]
 }

@@ -1,7 +1,8 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, dialog } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { registerIpcHandlers } from './backend/ipc';
+import { initializeDatabase, closeDatabase } from './backend/database';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -39,9 +40,16 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  initializeDatabase(path.join(app.getPath('userData'), 'workspace.sqlite'));
   registerIpcHandlers();
   createWindow();
+}).catch((error: unknown) => {
+  console.error('Unable to start the application:', error);
+  dialog.showErrorBox('Unable to start', 'The local database or application could not be opened. Please restart the app.');
+  app.quit();
 });
+
+app.on('will-quit', closeDatabase);
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
