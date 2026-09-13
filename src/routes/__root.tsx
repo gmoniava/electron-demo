@@ -1,4 +1,5 @@
 import { createRootRoute, Link, Outlet, useRouter } from '@tanstack/react-router'
+import { ListTodo, Users } from 'lucide-react'
 
 export const Route = createRootRoute({
   component: MainLayout,
@@ -23,10 +24,12 @@ function MainLayout() {
     <div className="flex min-h-screen bg-white font-sans text-sm text-gray-900">
       <aside className="w-40 shrink-0 border-r border-gray-200 p-4">
         <nav aria-label="Main navigation" className="space-y-1">
-          <Link to="/tasks" className="block rounded px-3 py-2 hover:bg-gray-100" activeProps={{ className: 'bg-gray-100 font-medium', 'aria-current': 'page' }}>
+          <Link to="/tasks" className="flex items-center gap-2 rounded px-3 py-2 hover:bg-gray-100" activeProps={{ className: 'bg-gray-100 font-medium', 'aria-current': 'page' }}>
+            <ListTodo size={18} className="shrink-0" aria-hidden="true" />
             Tasks
           </Link>
-          <Link to="/contacts" className="block rounded px-3 py-2 hover:bg-gray-100" activeProps={{ className: 'bg-gray-100 font-medium', 'aria-current': 'page' }}>
+          <Link to="/contacts" className="flex items-center gap-2 rounded px-3 py-2 hover:bg-gray-100" activeProps={{ className: 'bg-gray-100 font-medium', 'aria-current': 'page' }}>
+            <Users size={18} className="shrink-0" aria-hidden="true" />
             Contacts
           </Link>
         </nav>
